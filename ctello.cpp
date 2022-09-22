@@ -14,35 +14,10 @@
 
 #include <sstream>
 
-#include "spdlog/spdlog.h"
+
 const char* const LOG_PATTERN = "[%D %T] [ctello] [%^%l%$] %v";
 
 namespace ctello {
-
-
-// Reads the spdlog level from the given environment variable name.
-spdlog::level::level_enum GetLogLevelFromEnv(const std::string& var_name)
-{
-    // clang-format off
-    std::unordered_map<std::string, spdlog::level::level_enum> name_to_enum = {
-        {"trace", spdlog::level::trace},
-        {"debug", spdlog::level::debug},
-        {"info", spdlog::level::info},
-        {"warn", spdlog::level::warn},
-        {"error", spdlog::level::err},
-        {"critical", spdlog::level::critical},
-        {"off", spdlog::level::off}
-    };
-    // clang-format on
-    const char* const name_c_str = std::getenv(var_name.c_str());
-    if (name_c_str == nullptr)
-    {
-        // Info is the default
-        return spdlog::level::info;
-    }
-    const std::string name{name_c_str};
-    return name_to_enum[name];
-}
 
 // Binds the given socket file descriptor ot the given port.
 // Returns whether it suceeds or not and the error message.
@@ -146,9 +121,6 @@ Tello::Tello()
 {
     m_command_sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     m_state_sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    spdlog::set_pattern(LOG_PATTERN);
-    auto log_level = ctello::GetLogLevelFromEnv("SPDLOG_LEVEL");
-    spdlog::set_level(log_level);
 }
 
 Tello::~Tello()
@@ -164,7 +136,7 @@ bool Tello::Bind(const int local_client_command_port)
         ctello::BindSocketToPort(m_command_sockfd, local_client_command_port);
     if (!result.first)
     {
-        spdlog::error(result.second);
+        //spdlog::error(result.second);
         return false;
     }
     m_local_client_command_port = local_client_command_port;
@@ -172,7 +144,7 @@ bool Tello::Bind(const int local_client_command_port)
                               &m_tello_server_command_addr);
     if (!result.first)
     {
-        spdlog::error(result.second);
+        //spdlog::error(result.second);
         return false;
     }
 
@@ -180,14 +152,14 @@ bool Tello::Bind(const int local_client_command_port)
     result = ctello::BindSocketToPort(m_state_sockfd, LOCAL_SERVER_STATE_PORT);
     if (!result.first)
     {
-        spdlog::error(result.second);
+        //spdlog::error(result.second);
         return false;
     }
 
     // Finding Tello
-    spdlog::info("Finding Tello ...");
+    //spdlog::info("Finding Tello ...");
     FindTello();
-    spdlog::info("Entered SDK mode");
+    //spdlog::info("Entered SDK mode");
 
     ShowTelloInfo();
 
@@ -210,22 +182,22 @@ void Tello::ShowTelloInfo()
     SendCommand("sn?");
     while (!(response = ReceiveResponse()))
         ;
-    spdlog::info("Serial Number: {0}", *response);
+    //spdlog::info("Serial Number: {0}", *response);
 
     SendCommand("sdk?");
     while (!(response = ReceiveResponse()))
         ;
-    spdlog::info("Tello SDK:     {0}", *response);
+    //spdlog::info("Tello SDK:     {0}", *response);
 
     SendCommand("wifi?");
     while (!(response = ReceiveResponse()))
         ;
-    spdlog::info("Wi-Fi Signal:  {0}", *response);
+    //spdlog::info("Wi-Fi Signal:  {0}", *response);
 
     SendCommand("battery?");
     while (!(response = ReceiveResponse()))
         ;
-    spdlog::info("Battery:       {0}", *response);
+    //spdlog::info("Battery:       {0}", *response);
 }
 
 bool Tello::SendCommand(const std::string& command)
@@ -237,12 +209,12 @@ bool Tello::SendCommand(const std::string& command)
     const int bytes{result.first};
     if (bytes == -1)
     {
-        spdlog::error(result.second);
+        //spdlog::error(result.second);
         return false;
     }
-    spdlog::debug("127.0.0.1:{} >>>> {} bytes >>>> {}:{}: {}",
-                  m_local_client_command_port, bytes, TELLO_SERVER_IP,
-                  TELLO_SERVER_COMMAND_PORT, command);
+    //spdlog::debug("127.0.0.1:{} >>>> {} bytes >>>> {}:{}: {}",
+      //            m_local_client_command_port, bytes, TELLO_SERVER_IP,
+       //           TELLO_SERVER_COMMAND_PORT, command);
     return true;
 }
 
@@ -260,9 +232,9 @@ std::optional<std::string> Tello::ReceiveResponse()
     std::string response{buffer.cbegin(), buffer.cbegin() + bytes};
     // Some responses contain trailing white spaces.
     response.erase(response.find_last_not_of(" \n\r\t") + 1);
-    spdlog::debug("127.0.0.1:{} <<<< {} bytes <<<< {}:{}: {}",
-                  m_local_client_command_port, bytes, TELLO_SERVER_IP,
-                  TELLO_SERVER_COMMAND_PORT, response);
+    //spdlog::debug("127.0.0.1:{} <<<< {} bytes <<<< {}:{}: {}",
+     //             m_local_client_command_port, bytes, TELLO_SERVER_IP,
+     //             TELLO_SERVER_COMMAND_PORT, response);
     return response;
 }
 
@@ -280,9 +252,9 @@ std::optional<std::string> Tello::GetState()
     std::string response{std::cbegin(buffer), std::cbegin(buffer) + bytes};
     // Some responses contain trailing white spaces.
     response.erase(response.find_last_not_of(" \n\r\t") + 1);
-    spdlog::debug("127.0.0.1:{} <<<< {} bytes <<<< {}:{}: <state>",
-                  m_local_client_command_port, bytes, TELLO_SERVER_IP,
-                  TELLO_SERVER_COMMAND_PORT);
+    //spdlog::debug("127.0.0.1:{} <<<< {} bytes <<<< {}:{}: <state>",
+    //              m_local_client_command_port, bytes, TELLO_SERVER_IP,
+    //              TELLO_SERVER_COMMAND_PORT);
     return response;
 }
 
